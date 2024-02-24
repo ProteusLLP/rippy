@@ -271,14 +271,57 @@ class Burr(Distribution):
             + self.loc
         )
 
-def _inverse_burr_invcdf(u,scale,shape,power,loc):
-    if u == 0:
-            return loc
-    return (
-            scale
-            * ((u ** (-1 / shape) - 1) ** (-1 / power))
-            + loc
-        )
+
+class Beta(Distribution):
+    r"""Beta distribution
+    
+    The Beta Distribution is defined through the cumulative distribution function:
+    
+    .. math::
+
+        F(x) =    \frac{\Gamma(\alpha+\beta)}{\Gamma(\alpha)\Gamma(\beta)} \int_0^x u^{\alpha-1}(1-u)^{\beta-1} \\
+        
+    where :math:`u = \frac{x-\mu}{\sigma}`,:math:`\alpha` and :math:`\beta` are the shape parameters, :math:`\mu` is the location parameter, :math:`\sigma` is the scale parameter.
+
+    Args:
+            alpha (float): The alpha parameter.
+            beta (float): The beta parameter.
+            scale (float): The scale parameter.
+            loc (float): The location parameter.
+    
+    """
+
+    def __init__(self, alpha, beta, scale=1, loc=0):
+        
+        self.alpha = alpha
+        self.beta = beta
+        self.scale = scale
+        self.loc = loc
+
+    def cdf(self, x) -> np.ndarray | float:
+        """
+        Calculates the cumulative distribution function (CDF) of the Beta distribution.
+
+        Parameters:
+            x: The value at which to evaluate the CDF.
+
+        Returns:
+            u: The CDF value at the given x.
+        """
+        return special.betainc(self.alpha, self.beta, (x - self.loc) / self.scale)
+
+    def invcdf(self, u) -> np.ndarray | float:
+        """
+        Calculates the inverse cumulative distribution function (CDF) of the Beta distribution.
+
+        Parameters:
+            u (float or np.ndarray): The probability value(s) for which to calculate the inverse CDF.
+
+        Returns:
+            float or np.ndarray: The corresponding quantile(s) for the given probability value(s).
+        """
+        return special.betaincinv(self.alpha, self.beta, u) * self.scale + self.loc
+
 
 class InverseBurr(Distribution):
     r"""Inverse Burr Distribution
@@ -425,6 +468,137 @@ class Normal(Distribution):
         float or ndarray: The corresponding value(s) from the inverse cdf of the Normal Distribution.
         """
         return special.ndtri(u) * self.sigma + self.mu
+
+
+class LogNormal(Distribution):
+    """Log Normal distribution
+    
+    Parameters:
+        - mu (float): The mean of the logged distribution.
+        - sigma (float): The standard deviation of the logged distribution.
+
+    """
+
+    def __init__(self, mu, sigma):
+        self.mu = mu
+        self.sigma = sigma
+
+    def cdf(self, x: np.ndarray | float) -> np.ndarray | float:
+        """
+        Calculates the cumulative distribution function (CDF) of the Log-Normal Distribution.
+
+        Parameters:
+        - x (float or ndarray): The value at which to evaluate the CDF.
+
+        Returns:
+        float or ndarray: The probability that a random variable from the Log-Normal Distribution is less than or equal to x.
+        """
+        return special.ndtr((np.log(x) - self.mu) / self.sigma)
+
+    def invcdf(self, u:np.ndarray | float) -> np.ndarray | float:
+        """Calculates the inverse cdf of the Log-Normal Distribution
+        
+        Parameters:
+        u (float or ndarray): The probability value(s) for which to calculate the inverse cdf.
+        
+        Returns:
+        float or ndarray: The corresponding value(s) from the inverse cdf of the Log-Normal Distribution.
+        """
+        return np.exp(special.ndtri(u) * self.sigma + self.mu)
+    
+
+class Gamma(Distribution):
+    r"""Gamma distribution.
+
+    The Gamma distribution has the following cumulative distribution function (CDF):
+
+    .. math::
+    
+            F(x) = \frac{1}{\Gamma(\alpha)} \gamma(k, \frac{(\alpha-\mu)}{\theta}), x>\mu    
+        where :math:`\alpha` is the shape parameter, :math:`\theta` is the scale parameter, :math:`\mu` is the location parameter and :math:`\gamma(\alpha,z )` is the lower incomplete gamma function.
+    
+    Parameters:
+        - alpha: The shape parameter :math:`\alpha`.
+        - scale: The scale parameter :math:`\theta`.
+        - loc: The location parameter :math:`\mu`.
+
+    """
+
+    def __init__(self, alpha, theta,loc=0):
+        self.alpha = alpha
+        self.theta = theta
+        self.loc = loc
+
+    def cdf(self, x: np.ndarray | float) -> np.ndarray | float:
+        """
+        Calculates the cumulative distribution function (CDF) of the Gamma Distribution.
+
+        Parameters:
+        - x (float or ndarray): The value at which to evaluate the CDF.
+
+        Returns:
+        float or ndarray: The probability that a random variable from the Gamma Distribution is less than or equal to x.
+        """
+        return special.gammainc(self.alpha, (x-self.loc) / self.theta)
+
+    def invcdf(self, u:np.ndarray | float) -> np.ndarray | float:
+        """Calculates the inverse cdf of the Gamma Distribution
+        
+        Parameters:
+        u (float or ndarray): The probability value(s) for which to calculate the inverse cdf.
+        
+        Returns:
+        float or ndarray: The corresponding value(s) from the inverse cdf of the Gamma Distribution.
+        """
+        return special.gammaincinv(self.alpha, u) * self.theta + self.loc
+    
+
+class InverseGamma(Distribution):
+    r"""Inverse Gamma distribution.
+
+    The Inverse Gamma distribution has the following cumulative distribution function (CDF):
+
+    .. math::
+    
+            F(x) = 1-\frac{1}{\Gamma(\alpha)} \gamma(\alpha, \frac{\theta}{(x-\mu)}), x>\mu    
+        where :math:`\alpha` is the shape parameter, :math:`\theta` is the scale parameter, :math:`\mu` is the location parameter and :math:`\gamma(\alpha,z )` is the lower incomplete gamma function.
+    
+    Parameters:
+        - alpha: The shape parameter :math:`\alpha`.
+        - scale: The scale parameter :math:`\theta`.
+        - loc: The location parameter :math:`\mu`.
+
+    """
+
+    def __init__(self, alpha, theta,loc=0):
+        self.alpha = alpha
+        self.theta = theta
+        self.loc = loc
+
+    def cdf(self, x: np.ndarray | float) -> np.ndarray | float:
+        """
+        Calculates the cumulative distribution function (CDF) of the Inverse Gamma Distribution.
+
+        Parameters:
+        - x (float or ndarray): The value at which to evaluate the CDF.
+
+        Returns:
+        float or ndarray: The probability that a random variable from the Inverse Gamma Distribution is less than or equal to x.
+        """
+        return special.gammaincc(self.alpha,  np.divide(self.theta,(x-self.loc)) )
+
+    def invcdf(self, u:np.ndarray | float) -> np.ndarray | float:
+        """Calculates the inverse cdf of the Inverse Gamma Distribution        
+
+        Parameters:
+        u (float or ndarray): The probability value(s) for which to calculate the inverse cdf.
+        
+        Returns:
+        float or ndarray: The corresponding value(s) from the inverse cdf of the Inverse Gamma Distribution.
+        """
+        return  np.divide(self.theta,special.gammainccinv(self.alpha, u))  + self.loc
+
+
 
 class Pareto(Distribution):
     r"""Pareto Distribution
